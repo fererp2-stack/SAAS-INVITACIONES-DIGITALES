@@ -175,7 +175,10 @@ body.bloqueado{overflow:hidden}
   function simular(d) {
     var L = local.items;
     switch (d.accion) {
-      case 'entrar': return d.usuario && d.clave ? { ok: true, token: 'local' } : { ok: false, error: 'Escribe usuario y contraseña.' };
+      case 'estado': return { ok: true, tieneClave: guardado('galeria_local_clave') === '1', correo: 'tu•••@gmail.com' };
+      case 'crear_cuenta': guardado('galeria_local_clave', '1'); return d.correo && d.clave ? { ok: true, token: 'local' } : { ok: false, error: 'Escribe tu correo y contraseña.' };
+      case 'entrar': return d.correo && d.clave ? { ok: true, token: 'local' } : { ok: false, error: 'Escribe tu correo y contraseña.' };
+      case 'recuperar': return { ok: true, correo: 'tu•••@gmail.com' };
       case 'todas': return { ok: true, items: L, ajustes: local.ajustes };
       case 'guardar':
         var x = d.item, i = L.findIndex(function (y) { return y.id === x.id; });
@@ -281,24 +284,59 @@ body.bloqueado{overflow:hidden}
       .catch(function (e) { if (/sesi[oó]n/i.test(e.message)) { guardado('galeria_token', null); pintarLogin(e.message); } else aviso(e.message, true); });
   }
   function cerrarPanel() { $('panel').hidden = true; document.body.classList.remove('bloqueado'); }
+  function campoClave(ph, ac) {
+    var i = el('input', { 'class': 'campo', type: 'password', autocomplete: ac, placeholder: ph, style: 'padding-right:46px' });
+    var ojo = el('button', { type: 'button', 'aria-label': 'Ver contraseña', texto: '👁', style: 'position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:none;font-size:17px;cursor:pointer;padding:8px;color:var(--suave)',
+      onclick: function () { i.type = i.type === 'password' ? 'text' : 'password'; i.focus(); } });
+    return { caja: el('div', { style: 'position:relative' }, [i, ojo]), input: i };
+  }
+  // acceso: solo correo + contraseña. La primera vez la contraseña se crea ahí mismo.
   function pintarLogin(msg) {
     $('salir').hidden = true;
-    var u = el('input', { 'class': 'campo', autocomplete: 'username', autocapitalize: 'none', placeholder: 'Usuario' });
-    var c = el('input', { 'class': 'campo', type: 'password', autocomplete: 'current-password', placeholder: 'Contraseña' });
-    var err = el('div', { 'class': 'error', hidden: !msg, texto: msg || '' });
-    var b = el('button', { 'class': 'btn pri', type: 'button', texto: 'Entrar', onclick: function () {
+    var cuerpo = $('panelCuerpo'); cuerpo.innerHTML = '<p style="padding:30px;text-align:center;color:var(--suave)">Cargando…</p>';
+    api('estado').then(function (r) {
+      var nuevo = !r.tieneClave;
+      var correo = el('input', { 'class': 'campo', type: 'email', inputmode: 'email', autocomplete: 'email', autocapitalize: 'none', placeholder: 'Tu correo' });
+      var cl = campoClave(nuevo ? 'Crea tu contraseña (mínimo 6)' : 'Contraseña', nuevo ? 'new-password' : 'current-password');
+      var err = el('div', { 'class': 'error', hidden: !msg, texto: msg || '' });
+      var fallo = function (e) { err.textContent = e.message; err.hidden = false; };
+      var b = el('button', { 'class': 'btn pri', type: 'button', texto: nuevo ? 'Crear y entrar' : 'Entrar', onclick: function () {
+        if (nuevo && cl.input.value.trim().length < 6) return fallo(new Error('La contraseña debe tener al menos 6 caracteres.'));
+        b.disabled = true;
+        api(nuevo ? 'crear_cuenta' : 'entrar', { correo: correo.value.trim(), clave: cl.input.value }).then(function (x) {
+          guardado('galeria_token', x.token);
+          if (x.debeCambiar) pintarNuevaClave(); else abrirPanel();
+        }).catch(fallo).then(function () { b.disabled = false; });
+      } });
+      cl.input.addEventListener('keydown', function (e) { if (e.key === 'Enter') b.click(); });
+      var olvide = nuevo ? null : el('button', { 'class': 'btn chico', type: 'button', texto: 'Olvidé mi contraseña', style: 'background:none;color:var(--acento);padding:8px 0;margin-top:6px', onclick: function () {
+        olvide.disabled = true;
+        api('recuperar').then(function (x) {
+          olvide.textContent = 'Te enviamos una contraseña temporal a ' + x.correo + ' (revisa también Spam)';
+          cl.input.value = ''; cl.input.placeholder = 'Contraseña temporal del correo'; cl.input.focus();
+        }).catch(function (e) { olvide.disabled = false; fallo(e); });
+      } });
+      cuerpo.innerHTML = '';
+      cuerpo.appendChild(el('div', { 'class': 'caja', style: 'max-width:420px;margin:30px auto' }, [
+        el('h2', { texto: nuevo ? 'Crea tu acceso' : 'Entrar al panel' }),
+        el('p', { 'class': 'nota', texto: nuevo ? 'Escribe el correo de tu cuenta de Google (' + r.correo + ') y crea tu contraseña.' : 'Solo para quien administra la galería.' }),
+        correo, el('div', { style: 'height:8px' }), cl.caja, olvide, err, el('div', { 'class': 'fila' }, [b]),
+        LOCAL ? el('div', { 'class': 'aviso', texto: 'Vista previa local: escribe cualquier correo y contraseña. Nada se guarda.' }) : null]));
+      correo.focus();
+    }).catch(function (e) { cuerpo.innerHTML = ''; cuerpo.appendChild(el('div', { 'class': 'caja', style: 'max-width:420px;margin:30px auto' }, [el('div', { 'class': 'error', texto: e.message })])); });
+  }
+  // después de entrar con la contraseña temporal del correo
+  function pintarNuevaClave() {
+    var cl = campoClave('Nueva contraseña (mínimo 6)', 'new-password'), err = el('div', { 'class': 'error', hidden: true });
+    var b = el('button', { 'class': 'btn pri', type: 'button', texto: 'Guardar y entrar', onclick: function () {
       b.disabled = true;
-      api('entrar', { usuario: u.value, clave: c.value }).then(function (r) { guardado('galeria_token', r.token); abrirPanel(); })
-        .catch(function (e) { err.textContent = e.message; err.hidden = false; }).then(function () { b.disabled = false; });
+      api('cambiar_clave', { nueva: cl.input.value }).then(function (x) { guardado('galeria_token', x.token); aviso('Contraseña guardada ✓'); abrirPanel(); })
+        .catch(function (e) { err.textContent = e.message; err.hidden = false; b.disabled = false; });
     } });
-    c.addEventListener('keydown', function (e) { if (e.key === 'Enter') b.click(); });
     var cuerpo = $('panelCuerpo'); cuerpo.innerHTML = '';
     cuerpo.appendChild(el('div', { 'class': 'caja', style: 'max-width:420px;margin:30px auto' }, [
-      el('h2', { texto: 'Entrar al panel' }), el('p', { 'class': 'nota', texto: 'Solo para quien administra la galería.' }),
-      el('label', { 'class': 'et', texto: 'Usuario' }), u, el('label', { 'class': 'et', texto: 'Contraseña' }), c, err,
-      el('div', { 'class': 'fila' }, [b]),
-      LOCAL ? el('div', { 'class': 'aviso', texto: 'Vista previa local: escribe cualquier usuario y contraseña. Nada se guarda.' }) : null]));
-    u.focus();
+      el('h2', { texto: 'Crea una contraseña nueva' }), el('p', { 'class': 'nota', texto: 'Será la que uses desde ahora.' }), cl.caja, err, el('div', { 'class': 'fila' }, [b])]));
+    cl.input.focus();
   }
   function pintarPanel() {
     var cuerpo = $('panelCuerpo'); cuerpo.innerHTML = '';
