@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><script>
+var API = "https://script.google.com/macros/s/AKfycbzOmXtjlaDHfNZtP8dD2jPKDdMQnzgSv3Gr5WSZKS08yycdSNVldAecVPWvmVKETXd4Fg/exec";   // ◀◀◀ SOLO CAMBIA ESTO: la URL /exec del Code.gs de la galería
+</script>
+<!--
+  WEB INVITACIONES · galería + visor + panel (un solo archivo para Netlify o GitHub Pages)
+  Desarrollado por FerPaul — https://ferpaul.com · https://www.youtube.com/@ferpaul · https://academy.ferpaul.com
+  Las invitaciones viven en sus propios Apps Script; aquí solo se pega su URL /exec desde el panel (candado al pie).
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FBF8F4">
+<title>Invitaciones digitales</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--fondo:#FBF8F4;--tarjeta:#FFFFFF;--tinta:#221D1F;--suave:#6E6266;--linea:#E9E2DC;--acento:#B9727F;--acento-suave:#F4E6E8;--oscuro:#221D1F;
+  --serif:'Playfair Display',Georgia,serif;--sans:'Jost',system-ui,sans-serif;--radio:16px}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--fondo);color:var(--tinta);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+[hidden]{display:none!important}
+.envoltura{max-width:1240px;margin:0 auto;padding:0 16px}
+
+/* cabecera */
+.cab{text-align:center;padding:34px 16px 10px}
+.cab small{display:block;font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--acento);font-weight:500}
+.cab h1{font-family:var(--serif);font-weight:500;font-size:clamp(30px,8vw,46px);margin:8px 0 4px;line-height:1.1}
+.cab p{margin:0;color:var(--suave);font-size:15px;font-weight:300}
+
+/* filtros */
+.filtros{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--fondo) 92%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:12px 0 10px;border-bottom:1px solid var(--linea)}
+.cats{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:0 16px;max-width:1240px;margin:0 auto}
+.cats::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;border:1px solid var(--linea);background:var(--tarjeta);border-radius:999px;padding:8px 15px;font-size:14px;cursor:pointer;white-space:nowrap}
+.chip.on{background:var(--oscuro);border-color:var(--oscuro);color:#fff}
+.fila-buscar{display:flex;gap:10px;align-items:center;max-width:1240px;margin:10px auto 0;padding:0 16px}
+.buscar{flex:1;min-width:0;border:1px solid var(--linea);background:var(--tarjeta);border-radius:999px;padding:10px 16px;font-size:15px}
+.buscar:focus{outline:none;border-color:var(--acento)}
+.grabar{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--suave);white-space:nowrap;cursor:pointer}
+.grabar input{width:18px;height:18px;accent-color:var(--acento)}
+
+/* grilla */
+.grilla{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:18px 0 10px}
+@media (min-width:700px){.grilla{grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:20px}}
+.tarjeta{display:block;text-decoration:none;color:inherit;background:var(--tarjeta);border-radius:var(--radio);overflow:hidden;border:1px solid var(--linea);transition:transform .25s,box-shadow .25s}
+.tarjeta:hover{transform:translateY(-3px);box-shadow:0 14px 30px rgba(34,29,31,.10)}
+.foto{position:relative;aspect-ratio:4/5;background:var(--acento-suave);overflow:hidden}
+.foto img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s}
+.tarjeta:hover .foto img{transform:scale(1.04)}
+.sin-foto{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:14px;
+  background:radial-gradient(circle at 30% 20%,#fff 0,var(--acento-suave) 45%,color-mix(in srgb,var(--acento) 35%,var(--acento-suave)) 100%);
+  font-family:var(--serif);font-style:italic;font-size:22px;color:var(--tinta)}
+.ver{position:absolute;left:10px;bottom:10px;background:rgba(255,255,255,.92);border-radius:999px;padding:5px 11px;font-size:12px;font-weight:500}
+.info{padding:11px 12px 13px}
+.info span{display:block;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--acento);font-weight:500}
+.info h3{margin:4px 0 0;font-family:var(--serif);font-weight:500;font-size:17px;line-height:1.25;overflow-wrap:anywhere}
+.vacio{text-align:center;color:var(--suave);padding:50px 10px}
+.pie{text-align:center;padding:26px 16px calc(28px + env(safe-area-inset-bottom))}
+.candado{background:none;border:0;color:var(--tinta);opacity:.35;width:40px;height:40px;border-radius:50%;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.candado:hover{opacity:.8}
+.candado svg{width:17px;height:17px}
+
+/* visor */
+.visor{position:fixed;inset:0;z-index:50;background:#000}
+.visor iframe{position:absolute;inset:0;width:100%;height:100%;height:100dvh;border:0;display:block;background:#000}
+.cargando{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--fondo);transition:opacity .4s;z-index:1}
+.cargando.listo{opacity:0;pointer-events:none}
+.cargando i{width:40px;height:40px;border-radius:50%;border:3px solid var(--linea);border-top-color:var(--acento);animation:g 1s linear infinite}
+@keyframes g{to{transform:rotate(360deg)}}
+.barra-visor{position:absolute;top:0;left:0;right:0;z-index:3;display:flex;justify-content:space-between;gap:10px;
+  padding:calc(10px + env(safe-area-inset-top)) 12px 0;pointer-events:none;transition:opacity .35s,transform .35s}
+.barra-visor.oculta{opacity:0;transform:translateY(-12px)}
+.pildora{pointer-events:auto;border:0;cursor:pointer;border-radius:999px;padding:9px 15px;font-size:14px;font-weight:500;
+  background:rgba(20,17,18,.62);color:#fff;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);text-decoration:none;display:inline-flex;align-items:center;gap:6px;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.pildora.quiero{background:#25D366;color:#fff}
+.zona-toque{position:absolute;top:0;left:0;right:0;height:44px;z-index:2}
+
+/* panel */
+.panel{position:fixed;inset:0;z-index:60;background:var(--fondo);overflow:auto}
+.panel-cab{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;background:var(--tarjeta);border-bottom:1px solid var(--linea)}
+.panel-cab b{font-family:var(--serif);font-weight:500;font-size:19px}
+.panel-cuerpo{max-width:720px;margin:0 auto;padding:16px 16px 60px}
+.caja{background:var(--tarjeta);border:1px solid var(--linea);border-radius:var(--radio);padding:16px;margin-bottom:16px}
+.caja h2{font-family:var(--serif);font-weight:500;font-size:20px;margin:0 0 4px}
+.caja p.nota{margin:0 0 6px;color:var(--suave);font-size:14px}
+label.et{display:block;font-size:13px;font-weight:500;margin:12px 0 5px}
+.campo{width:100%;border:1px solid var(--linea);border-radius:12px;padding:11px 12px;font-size:16px;background:#FDFCFB}
+.campo:focus{outline:none;border-color:var(--acento);background:#fff}
+.dos{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+.fila{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.btn{border:0;border-radius:12px;padding:11px 16px;font-size:15px;font-weight:500;cursor:pointer;background:#F1ECE7;color:var(--tinta)}
+.btn.pri{background:var(--oscuro);color:#fff}
+.btn.suave{background:var(--acento-suave);color:#7A3F4A}
+.btn:disabled{opacity:.55;cursor:wait}
+.btn.chico{padding:7px 11px;font-size:13px;border-radius:10px}
+.tabs{display:flex;gap:6px;margin-bottom:14px}
+.interruptor{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:15px}
+.interruptor input{width:20px;height:20px;accent-color:var(--acento)}
+.prev-img{width:84px;aspect-ratio:4/5;object-fit:cover;border-radius:10px;background:var(--acento-suave);display:block;margin-top:8px}
+.item{display:grid;grid-template-columns:56px minmax(0,1fr);gap:12px;padding:12px 0;border-bottom:1px solid var(--linea)}
+.item:last-child{border-bottom:0}
+.item .mini{width:56px;aspect-ratio:4/5;border-radius:9px;object-fit:cover;background:var(--acento-suave)}
+.item b{display:block;font-weight:500;font-size:15px;overflow-wrap:anywhere}
+.item small{color:var(--suave);font-size:12.5px}
+.item .acc{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.etiqueta{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:#EEE9E4;color:var(--suave);margin-left:4px}
+.error{background:#FBE7E7;color:#8E2B2B;border-radius:12px;padding:10px 12px;font-size:14px;margin-top:10px}
+.aviso{background:#FFF5DB;color:#6B4E12;border-radius:12px;padding:10px 12px;font-size:13.5px;margin-top:10px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,20px);z-index:90;background:var(--oscuro);color:#fff;padding:11px 16px;border-radius:12px;font-size:14px;opacity:0;transition:.25s;pointer-events:none;max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+body.bloqueado{overflow:hidden}
+</style>
+</head>
+<body>
+<header class="cab"><small>Invitaciones digitales</small><h1 id="tienda">Invitaciones</h1><p id="subtitulo">Toca una invitación para verla como la verán tus invitados</p></header>
+<div class="filtros">
+  <nav class="cats" id="cats" aria-label="Categorías"></nav>
+  <div class="fila-buscar">
+    <input class="buscar" id="q" type="search" placeholder="Buscar invitación…" aria-label="Buscar">
+    <label class="grabar" title="Oculta los botones dentro de la invitación para grabar la pantalla"><input type="checkbox" id="modoGrabar"> Modo grabación</label>
+  </div>
+</div>
+<main class="envoltura"><div class="grilla" id="grilla"></div><p class="vacio" id="vacio" hidden></p></main>
+<footer class="pie"><button class="candado" id="candado" aria-label="Panel de administración" title="Panel">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.2"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3"/></svg></button></footer>
+
+<section class="visor" id="visor" hidden>
+  <div class="cargando" id="cargando"><i></i></div>
+  <div class="zona-toque" id="zonaToque" hidden></div>
+  <div class="barra-visor" id="barraVisor">
+    <button class="pildora" id="atras" type="button">‹ Atrás</button>
+    <a class="pildora quiero" id="quiero" target="_blank" rel="noopener" hidden>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-3.3-.9-2.8-1.2-4.5-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.3.5-.4.4c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.2.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.7-.1 1.2Z"/></svg>
+      La quiero</a>
+  </div>
+</section>
+
+<section class="panel" id="panel" hidden>
+  <div class="panel-cab"><b>Panel</b><div style="display:flex;gap:6px"><button class="btn chico" id="verGaleria" type="button">Ver galería</button><button class="btn chico" id="salir" type="button" hidden>Salir</button></div></div>
+  <div class="panel-cuerpo" id="panelCuerpo"></div>
+</section>
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+  var LOCAL = !/^https:\/\/script\.google\.com\/.+\/exec$/.test(API);
+  var $ = function (id) { return document.getElementById(id); };
+  var datos = { ajustes: { tienda: 'Invitaciones Digitales', whatsapp: '' }, items: [] };
+  var categoria = 'Todas', desdeGaleria = false, tOcultar = null;
+  var CATEGORIAS = ['Bodas', 'XV años', 'Cumpleaños', 'Baby shower', 'Bautizo', 'Graduación', 'Eventos', 'Otros'];
+  var guardado = function (k, v) { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { return null; } };
+
+  // ───────── datos de ejemplo (vista previa local, sin Google) ─────────
+  var EJEMPLO = [
+    { id: 'demo1', titulo: 'Velo de luz', categoria: 'Bodas', exec: '../../INVI SCRIPT/I2-BODA-001/apps-script/index.html#demo', imagen: 'https://res.cloudinary.com/p8o5bngd/image/upload/v1794886434/invi-script/boda-01/portada.jpg', visible: true },
+    { id: 'demo2', titulo: 'Gala de medianoche', categoria: 'XV años', exec: '../../INVI SCRIPT/I1-XV-001/apps-script/index.html#demo', imagen: '', visible: true },
+    { id: 'demo3', titulo: 'Bajo el mismo cielo', categoria: 'Bodas', exec: '../../INVI SCRIPT/I2-BODA-001/apps-script/index.html', imagen: 'https://res.cloudinary.com/p8o5bngd/image/upload/v1794886440/invi-script/boda-01/cierre.jpg', visible: true },
+    { id: 'demo4', titulo: 'Jardín secreto', categoria: 'Bautizo', exec: '../../INVI SCRIPT/I1-XV-001/apps-script/index.html', imagen: '', visible: false }
+  ];
+  var local = { items: EJEMPLO.slice(), ajustes: { tienda: 'Invitaciones Digitales', whatsapp: '59170000000' } };
+
+  // ───────── servidor ─────────
+  function listar() {
+    if (LOCAL) return Promise.resolve({ ok: true, ajustes: local.ajustes, items: local.items.filter(function (x) { return x.visible; }) });
+    return fetch(API + '?accion=listar').then(function (r) { return r.json(); });
+  }
+  function api(accion, d) {
+    d = Object.assign({ accion: accion, token: guardado('galeria_token') || '' }, d || {});
+    if (LOCAL) return new Promise(function (ok) { setTimeout(function () { ok(simular(d)); }, 200); }).then(revisar);
+    return fetch(API, { method: 'POST', body: JSON.stringify(d) }).then(function (r) { return r.json(); }).then(revisar);
+  }
+  function revisar(r) { if (!r || !r.ok) throw new Error((r && r.error) || 'Ocurrió un error.'); return r; }
+  function simular(d) {
+    var L = local.items;
+    switch (d.accion) {
+      case 'entrar': return d.usuario && d.clave ? { ok: true, token: 'local' } : { ok: false, error: 'Escribe usuario y contraseña.' };
+      case 'todas': return { ok: true, items: L, ajustes: local.ajustes };
+      case 'guardar':
+        var x = d.item, i = L.findIndex(function (y) { return y.id === x.id; });
+        if (!x.titulo) return { ok: false, error: 'Escribe el título.' };
+        if (i >= 0) L[i] = x; else { x.id = Math.random().toString(36).slice(2, 10); L.push(x); }
+        return { ok: true, id: x.id };
+      case 'borrar': local.items = L.filter(function (y) { return y.id !== d.id; }); return { ok: true };
+      case 'ordenar': local.items = d.ids.map(function (id) { return L.filter(function (y) { return y.id === id; })[0]; }).filter(Boolean); return { ok: true };
+      case 'ajustes': local.ajustes = { tienda: d.tienda, whatsapp: String(d.whatsapp || '').replace(/\D/g, '') }; return { ok: true, ajustes: local.ajustes };
+      case 'cambiar_clave': return { ok: true, token: 'local' };
+      case 'leer_exec': return { ok: true, titulo: 'Invitación de ejemplo', imagen: '', categoria: 'Bodas' };
+    }
+    return { ok: false, error: 'Acción desconocida.' };
+  }
+
+  // ───────── utilidades ─────────
+  function el(tag, attrs, hijos) {
+    var e = document.createElement(tag);
+    Object.keys(attrs || {}).forEach(function (k) {
+      if (k === 'texto') e.textContent = attrs[k];
+      else if (k.indexOf('on') === 0) e.addEventListener(k.slice(2), attrs[k]);
+      else if (attrs[k] !== false && attrs[k] != null) e.setAttribute(k, attrs[k] === true ? '' : attrs[k]);
+    });
+    (hijos || []).forEach(function (h) { if (h) e.appendChild(typeof h === 'string' ? document.createTextNode(h) : h); });
+    return e;
+  }
+  var tToast;
+  function aviso(m, mal) { var t = $('toast'); t.textContent = m; t.style.background = mal ? '#8E2B2B' : ''; t.classList.add('on'); clearTimeout(tToast); tToast = setTimeout(function () { t.classList.remove('on'); }, mal ? 4500 : 2200); }
+  function normal(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+
+  // ───────── galería ─────────
+  function pintarGaleria() {
+    var a = datos.ajustes || {};
+    $('tienda').textContent = a.tienda || 'Invitaciones';
+    document.title = a.tienda || 'Invitaciones digitales';
+    var cats = ['Todas'].concat(CATEGORIAS.concat(datos.items.map(function (x) { return x.categoria; }))
+      .filter(function (c, i, l) { return c && l.indexOf(c) === i && datos.items.some(function (x) { return x.categoria === c; }); }));
+    if (cats.indexOf(categoria) < 0) categoria = 'Todas';
+    var nav = $('cats'); nav.innerHTML = '';
+    cats.forEach(function (c) {
+      nav.appendChild(el('button', { type: 'button', 'class': 'chip' + (c === categoria ? ' on' : ''), texto: c, onclick: function () { categoria = c; pintarGaleria(); } }));
+    });
+    var q = normal($('q').value), g = $('grilla'); g.innerHTML = '';
+    var lista = datos.items.filter(function (x) { return (categoria === 'Todas' || x.categoria === categoria) && (!q || normal(x.titulo + ' ' + x.categoria).indexOf(q) >= 0); });
+    lista.forEach(function (x) {
+      var foto = el('div', { 'class': 'foto' }, [
+        x.imagen ? el('img', { src: x.imagen, alt: x.titulo, loading: 'lazy', decoding: 'async' }) : el('div', { 'class': 'sin-foto', texto: x.titulo }),
+        el('span', { 'class': 'ver', texto: 'Ver invitación' })]);
+      g.appendChild(el('a', { 'class': 'tarjeta', href: '#/ver/' + encodeURIComponent(x.id), onclick: function () { desdeGaleria = true; } },
+        [foto, el('div', { 'class': 'info' }, [el('span', { texto: x.categoria }), el('h3', { texto: x.titulo })])]));
+    });
+    var v = $('vacio');
+    v.hidden = lista.length > 0;
+    v.textContent = datos.items.length ? 'No hay invitaciones con ese filtro.' : 'Pronto verás aquí nuestras invitaciones.';
+  }
+  $('q').addEventListener('input', pintarGaleria);
+  $('modoGrabar').checked = guardado('modo_grabar') === '1';
+  $('modoGrabar').addEventListener('change', function () { guardado('modo_grabar', this.checked ? '1' : null); aviso(this.checked ? 'Modo grabación: los botones se ocultan solos dentro de la invitación' : 'Modo grabación apagado'); });
+  $('candado').addEventListener('click', function () { location.hash = '#/panel'; });
+
+  // ───────── visor ─────────
+  function abrirVisor(id) {
+    var x = datos.items.filter(function (y) { return y.id === id; })[0] || (panelItems || []).filter(function (y) { return y.id === id; })[0];
+    if (!x) { location.hash = '#/'; return; }
+    $('visor').hidden = false; document.body.classList.add('bloqueado');
+    var m = $('marco');
+    if (!m || m.getAttribute('data-id') !== id) {
+      // un iframe NUEVO con su dirección ya puesta: así no deja pasos extra en el historial y "Atrás" vuelve a la galería
+      if (m) m.remove();
+      $('cargando').classList.remove('listo');
+      m = el('iframe', { id: 'marco', title: x.titulo, 'data-id': id, allow: 'autoplay; fullscreen; clipboard-write; web-share', src: x.exec });
+      m.onload = function () { $('cargando').classList.add('listo'); };
+      setTimeout(function () { $('cargando').classList.add('listo'); }, 8000);
+      $('visor').insertBefore(m, $('zonaToque'));
+    }
+    var w = String((datos.ajustes || {}).whatsapp || '').replace(/\D/g, ''), q = $('quiero');
+    q.hidden = !w;
+    if (w) q.href = 'https://wa.me/' + w + '?text=' + encodeURIComponent('Hola, me interesa la invitación "' + x.titulo + '" (' + x.categoria + ')');
+    mostrarBotones();
+  }
+  function cerrarVisor() {
+    $('visor').hidden = true; document.body.classList.remove('bloqueado');
+    var m = $('marco'); if (m) m.remove();
+    clearTimeout(tOcultar);
+  }
+  function mostrarBotones() {
+    var b = $('barraVisor'); b.classList.remove('oculta'); $('zonaToque').hidden = true;
+    clearTimeout(tOcultar);
+    if ($('modoGrabar').checked) tOcultar = setTimeout(function () { b.classList.add('oculta'); $('zonaToque').hidden = false; }, 2000);
+  }
+  $('zonaToque').addEventListener('click', mostrarBotones);
+  $('zonaToque').addEventListener('mousemove', mostrarBotones);
+  $('atras').addEventListener('click', function () { if (desdeGaleria) history.back(); else location.hash = '#/'; });
+
+  // ───────── panel ─────────
+  var panelItems = null, editando = null;
+  function abrirPanel() {
+    $('panel').hidden = false; document.body.classList.add('bloqueado');
+    if (!guardado('galeria_token')) return pintarLogin();
+    $('salir').hidden = false;
+    $('panelCuerpo').innerHTML = '<p class="nota" style="padding:20px;color:var(--suave)">Cargando…</p>';
+    api('todas').then(function (r) { panelItems = r.items; datos.ajustes = r.ajustes; pintarPanel(); })
+      .catch(function (e) { if (/sesi[oó]n/i.test(e.message)) { guardado('galeria_token', null); pintarLogin(e.message); } else aviso(e.message, true); });
+  }
+  function cerrarPanel() { $('panel').hidden = true; document.body.classList.remove('bloqueado'); }
+  function pintarLogin(msg) {
+    $('salir').hidden = true;
+    var u = el('input', { 'class': 'campo', autocomplete: 'username', autocapitalize: 'none', placeholder: 'Usuario' });
+    var c = el('input', { 'class': 'campo', type: 'password', autocomplete: 'current-password', placeholder: 'Contraseña' });
+    var err = el('div', { 'class': 'error', hidden: !msg, texto: msg || '' });
+    var b = el('button', { 'class': 'btn pri', type: 'button', texto: 'Entrar', onclick: function () {
+      b.disabled = true;
+      api('entrar', { usuario: u.value, clave: c.value }).then(function (r) { guardado('galeria_token', r.token); abrirPanel(); })
+        .catch(function (e) { err.textContent = e.message; err.hidden = false; }).then(function () { b.disabled = false; });
+    } });
+    c.addEventListener('keydown', function (e) { if (e.key === 'Enter') b.click(); });
+    var cuerpo = $('panelCuerpo'); cuerpo.innerHTML = '';
+    cuerpo.appendChild(el('div', { 'class': 'caja', style: 'max-width:420px;margin:30px auto' }, [
+      el('h2', { texto: 'Entrar al panel' }), el('p', { 'class': 'nota', texto: 'Solo para quien administra la galería.' }),
+      el('label', { 'class': 'et', texto: 'Usuario' }), u, el('label', { 'class': 'et', texto: 'Contraseña' }), c, err,
+      el('div', { 'class': 'fila' }, [b]),
+      LOCAL ? el('div', { 'class': 'aviso', texto: 'Vista previa local: escribe cualquier usuario y contraseña. Nada se guarda.' }) : null]));
+    u.focus();
+  }
+  function pintarPanel() {
+    var cuerpo = $('panelCuerpo'); cuerpo.innerHTML = '';
+    var x = editando || { id: '', titulo: '', categoria: '', exec: '', imagen: '', visible: true };
+    // ── formulario ──
+    var exec = el('input', { 'class': 'campo', type: 'url', placeholder: 'https://script.google.com/macros/s/…/exec', value: x.exec });
+    var titulo = el('input', { 'class': 'campo', placeholder: 'Ej. Bodas de oro', value: x.titulo });
+    var cat = el('input', { 'class': 'campo', list: 'listaCats', placeholder: 'Ej. Bodas', value: x.categoria });
+    var lista = el('datalist', { id: 'listaCats' }, CATEGORIAS.map(function (c) { return el('option', { value: c }); }));
+    var img = el('input', { 'class': 'campo', type: 'url', placeholder: 'https://res.cloudinary.com/…/portada.jpg (opcional)', value: x.imagen });
+    var prev = el('img', { 'class': 'prev-img', alt: '', hidden: !x.imagen, src: x.imagen || '' });
+    img.addEventListener('input', function () { prev.src = img.value; prev.hidden = !/^https:\/\//.test(img.value); });
+    var vis = el('input', { type: 'checkbox' }); vis.checked = x.visible !== false;
+    var leer = el('button', { 'class': 'btn suave', type: 'button', texto: 'Leer datos', onclick: function () {
+      if (!exec.value.trim()) return aviso('Primero pega la URL /exec', true);
+      leer.disabled = true; leer.textContent = 'Leyendo…';
+      api('leer_exec', { exec: exec.value.trim() }).then(function (r) {
+        if (r.titulo && !titulo.value) titulo.value = r.titulo;
+        if (r.categoria && !cat.value) cat.value = r.categoria;
+        if (r.imagen && !img.value) { img.value = r.imagen; prev.src = r.imagen; prev.hidden = false; }
+        aviso(r.titulo || r.imagen ? 'Datos leídos ✓ Revisa y guarda' : 'No encontré datos: complétalos a mano');
+      }).catch(function (e) { aviso(e.message, true); }).then(function () { leer.disabled = false; leer.textContent = 'Leer datos'; });
+    } });
+    var guardar = el('button', { 'class': 'btn pri', type: 'button', texto: editando ? 'Guardar cambios' : '+ Agregar a la galería', onclick: function () {
+      guardar.disabled = true;
+      api('guardar', { item: { id: x.id, titulo: titulo.value.trim(), categoria: cat.value.trim(), exec: exec.value.trim(), imagen: img.value.trim(), visible: vis.checked } })
+        .then(function () { aviso(editando ? 'Cambios guardados ✓' : 'Invitación agregada ✓'); editando = null; recargar(); })
+        .catch(function (e) { aviso(e.message, true); guardar.disabled = false; });
+    } });
+    cuerpo.appendChild(el('div', { 'class': 'caja' }, [
+      el('h2', { texto: editando ? 'Editar invitación' : 'Agregar invitación' }),
+      el('p', { 'class': 'nota', texto: 'Pega la URL /exec de la invitación y toca "Leer datos": se llenan el título y la portada.' }),
+      el('label', { 'class': 'et', texto: 'URL /exec de la invitación' }), el('div', { 'class': 'dos' }, [exec, leer]),
+      el('label', { 'class': 'et', texto: 'Título' }), titulo,
+      el('label', { 'class': 'et', texto: 'Categoría' }), cat, lista,
+      el('label', { 'class': 'et', texto: 'Imagen de portada' }), img, prev,
+      el('label', { 'class': 'interruptor' }, [vis, 'Visible en la galería']),
+      el('div', { 'class': 'fila' }, [guardar, editando ? el('button', { 'class': 'btn', type: 'button', texto: 'Cancelar', onclick: function () { editando = null; pintarPanel(); } }) : null])]));
+    // ── lista ──
+    var caja = el('div', { 'class': 'caja' }, [el('h2', { texto: 'Invitaciones (' + panelItems.length + ')' }),
+      el('p', { 'class': 'nota', texto: 'El orden de esta lista es el orden de la galería.' })]);
+    if (!panelItems.length) caja.appendChild(el('p', { 'class': 'nota', texto: 'Aún no agregaste invitaciones.' }));
+    panelItems.forEach(function (y, i) {
+      function mover(d) {
+        var l = panelItems.slice(), j = i + d; if (j < 0 || j >= l.length) return;
+        l.splice(j, 0, l.splice(i, 1)[0]); panelItems = l; pintarPanel();
+        api('ordenar', { ids: l.map(function (z) { return z.id; }) }).catch(function (e) { aviso(e.message, true); });
+      }
+      caja.appendChild(el('div', { 'class': 'item' }, [
+        y.imagen ? el('img', { 'class': 'mini', src: y.imagen, alt: '', loading: 'lazy' }) : el('div', { 'class': 'mini' }),
+        el('div', {}, [el('b', {}, [y.titulo, y.visible === false ? el('span', { 'class': 'etiqueta', texto: 'oculta' }) : null]),
+          el('small', { texto: y.categoria }),
+          el('div', { 'class': 'acc' }, [
+            el('button', { 'class': 'btn chico', type: 'button', texto: '↑', 'aria-label': 'Subir', onclick: function () { mover(-1); } }),
+            el('button', { 'class': 'btn chico', type: 'button', texto: '↓', 'aria-label': 'Bajar', onclick: function () { mover(1); } }),
+            el('button', { 'class': 'btn chico', type: 'button', texto: 'Ver', onclick: function () { desdeGaleria = true; location.hash = '#/ver/' + encodeURIComponent(y.id); } }),
+            el('button', { 'class': 'btn chico', type: 'button', texto: 'Editar', onclick: function () { editando = Object.assign({}, y); pintarPanel(); $('panel').scrollTop = 0; } }),
+            el('button', { 'class': 'btn chico', type: 'button', texto: y.visible === false ? 'Mostrar' : 'Ocultar', onclick: function () {
+              api('guardar', { item: Object.assign({}, y, { visible: y.visible === false }) }).then(recargar).catch(function (e) { aviso(e.message, true); }); } }),
+            el('button', { 'class': 'btn chico suave', type: 'button', texto: 'Borrar', onclick: function () {
+              if (!confirm('¿Quitar "' + y.titulo + '" de la galería? (la invitación no se borra de Apps Script)')) return;
+              api('borrar', { id: y.id }).then(function () { aviso('Quitada de la galería'); recargar(); }).catch(function (e) { aviso(e.message, true); }); } })])])]));
+    });
+    cuerpo.appendChild(caja);
+    // ── ajustes ──
+    var a = datos.ajustes || {};
+    var tienda = el('input', { 'class': 'campo', value: a.tienda || '', placeholder: 'Invitaciones Digitales' });
+    var wa = el('input', { 'class': 'campo', type: 'tel', value: a.whatsapp || '', placeholder: '59170000000' });
+    var nueva = el('input', { 'class': 'campo', type: 'password', autocomplete: 'new-password', placeholder: 'Nueva contraseña (mínimo 6)' });
+    cuerpo.appendChild(el('div', { 'class': 'caja' }, [el('h2', { texto: 'Ajustes' }),
+      el('label', { 'class': 'et', texto: 'Nombre de la tienda (sale arriba en la galería)' }), tienda,
+      el('label', { 'class': 'et', texto: 'WhatsApp de venta, con código de país (botón "La quiero")' }), wa,
+      el('div', { 'class': 'fila' }, [el('button', { 'class': 'btn pri', type: 'button', texto: 'Guardar ajustes', onclick: function () {
+        api('ajustes', { tienda: tienda.value, whatsapp: wa.value }).then(function (r) { datos.ajustes = r.ajustes; aviso('Ajustes guardados ✓'); cargar(); }).catch(function (e) { aviso(e.message, true); }); } })]),
+      el('label', { 'class': 'et', texto: 'Cambiar contraseña del panel' }), nueva,
+      el('div', { 'class': 'fila' }, [el('button', { 'class': 'btn', type: 'button', texto: 'Cambiar contraseña', onclick: function () {
+        api('cambiar_clave', { nueva: nueva.value }).then(function (r) { guardado('galeria_token', r.token); nueva.value = ''; aviso('Contraseña cambiada ✓'); }).catch(function (e) { aviso(e.message, true); }); } })])]));
+  }
+  function recargar() { api('todas').then(function (r) { panelItems = r.items; datos.ajustes = r.ajustes; pintarPanel(); cargar(); }).catch(function (e) { aviso(e.message, true); }); }
+  $('verGaleria').addEventListener('click', function () { location.hash = '#/'; });
+  $('salir').addEventListener('click', function () { guardado('galeria_token', null); editando = null; location.hash = '#/'; aviso('Saliste del panel'); });
+
+  // ───────── rutas ─────────
+  function ruta() {
+    var h = location.hash, m = h.match(/^#\/ver\/(.+)$/);
+    if (m) { cerrarPanel(); abrirVisor(decodeURIComponent(m[1])); }
+    else if (h === '#/panel') { cerrarVisor(); abrirPanel(); }
+    else { cerrarVisor(); cerrarPanel(); desdeGaleria = false; }
+  }
+  addEventListener('hashchange', ruta);
+
+  // ───────── arranque: primero lo guardado (instantáneo), luego lo del servidor ─────────
+  try { var c = JSON.parse(guardado('galeria_cache') || 'null'); if (c && c.items && !LOCAL) { datos = c; pintarGaleria(); } } catch (e) {}
+  function cargar() {
+    return listar().then(function (r) {
+      if (!r.ok) throw new Error(r.error || 'No se pudo cargar la galería');
+      datos = { ajustes: r.ajustes || {}, items: r.items || [] };
+      if (!LOCAL) guardado('galeria_cache', JSON.stringify(datos));
+      pintarGaleria();
+    }).catch(function () {
+      if (!datos.items.length) { $('vacio').hidden = false; $('vacio').textContent = 'No se pudo cargar la galería. Revisa tu internet y recarga la página.'; }
+    });
+  }
+  cargar().then(ruta);
+})();
+</script>
+</body></html>
